@@ -1,4 +1,4 @@
-jQuery SimpleFilePreview
+jQuery SimpleFilePreview - with Drag & Drop and multiple file support
 ----
 
 SimpleFilePreview is a jQuery plug-in that allows for pre-form submission 
