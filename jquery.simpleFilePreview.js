@@ -85,9 +85,9 @@
           // if it's a multi-select, add another selection box to the end
           // NOTE: this is done first since we clone the previous input
           // NOTE: the second check is there because IE 8 fires multiple change events for no good reason
-          if (p.attr('data-sfpallowmultiple') == 1 && !p.find('.simpleFilePreview_preview').length) {
-            var newId = $.simpleFilePreview.uid++;
-            var newN = p.clone(true).attr('id', "simpleFilePreview_"+newId);
+          function createnew() {
+          	var newId = $.simpleFilePreview.uid++;
+            var newN = p.removeClass('hover').clone(true).attr('id', "simpleFilePreview_"+newId);
             newN.find('input.simpleFilePreview_formInput').attr('id', newN.find('input.simpleFilePreview_formInput').attr('id')+'_'+newId).val('');
             p.after(newN);
             var nw = p.parents('.simpleFilePreview_multi').width('+='+newN.outerWidth(true)).width();
@@ -96,33 +96,41 @@
                .find('.simpleFilePreview_shiftRight')
                .click();
             }
+            return newId;
           }
-          
+          function setupReader(x,file){
+              var r = new FileReader();
+              r.onload = function (e) {
+                addOrChangePreview(x, e.target.result);
+              };
+              r.readAsDataURL(file);
+          }
+
+          if (p.attr('data-sfpallowmultiple') == 1 && !p.find('.simpleFilePreview_preview').length) {
+          		createnew();
+          }
           if (this.files && this.files[0]) {
-            if ((new RegExp("^image\/("+$.simpleFilePreview.previewFileTypes+")$")).test(this.files[0].type.toLowerCase())) {
-              
-              if (window.FileReader) {
-                if ((new RegExp("^image\/("+$.simpleFilePreview.previewFileTypes+")$")).test(this.files[0].type.toLowerCase())) {
-                  // show preview of image file
-                  var r = new FileReader();
-                  r.onload = function (e) {
-                    addOrChangePreview(p, e.target.result);
-                  };
-                  r.readAsDataURL(this.files[0]);
-                  
-                }
-              }
-              
-            } else {
-              // show icon if not an image upload
-              var m = this.files[0].type.toLowerCase().match(/^\s*[^\/]+\/([a-zA-Z0-9\-\.]+)\s*$/);
-              if (m && m[1] && o.icons[m[1]]) {
-                addOrChangePreview(p, o.iconPath+o.icons[m[1]], getFilename(this.value));
-              } else {
-                addOrChangePreview(p, o.iconPath+o.defaultIcon, getFilename(this.value));
-              }
+			for (var i = 0; i < this.files.length; i++) {
+				if (i>0) {
+	            	pid = createnew();
+	            	p = $("#simpleFilePreview_"+pid);
+	            } 
+	            if ((new RegExp("^image\/("+$.simpleFilePreview.previewFileTypes+")$")).test(this.files[i].type.toLowerCase())) {	              	           
+	              if (window.FileReader) {
+	                  // show preview of image file	 
+						setupReader(p,this.files[i]);
+	              }
+	              
+	            } else {
+	              // show icon if not an image upload
+	              var m = this.files[i].type.toLowerCase().match(/^\s*[^\/]+\/([a-zA-Z0-9\-\.]+)\s*$/);
+	              if (m && m[1] && o.icons[m[1]]) {
+	                addOrChangePreview(p, o.iconPath+o.icons[m[1]], getFilename(this.value));
+	              } else {
+	                addOrChangePreview(p, o.iconPath+o.defaultIcon, getFilename(this.value));
+	              }
+	            }
             }
-            
           } else {
             // Any browser not supporting the File API (and FileReader)
             
@@ -233,7 +241,7 @@
   var setup = function(n, o) {
     var isMulti = n.is('[multiple]');
     // "multiple" removed because it's handled later manually
-    n = n.removeAttr('multiple').addClass('simpleFilePreview_formInput');
+    n = n.addClass('simpleFilePreview_formInput'); //removeAttr('multiple').
     
     // wrap input with necessary structure
     var c = $("<"+((isMulti)?'li':'div')+" id='simpleFilePreview_"+($.simpleFilePreview.uid++)+"' class='simpleFilePreview' data-sfpallowmultiple='"+((isMulti)?1:0)+"'>" +
@@ -356,7 +364,7 @@
   // Static properties
   $.simpleFilePreview = {
     defaults: {
-      'buttonContent': 'Add File',
+      'buttonContent': 'Add File(s)<br>Drag here',
       'removeContent': 'X',
       'existingFiles': null, // array or object. if object, key is used in the remove hidden input
       'shiftLeft': '&lt;&lt;',
@@ -408,5 +416,10 @@
     init: false,
     previewFileTypes: 'p?jpe?g|png|gif|bmp|svg'
   };
-  
+ 
 })(jQuery);
+
+	// file drop support
+	$("body").on('dragover','.simpleFilePreview:not(.simpleFilePreview_existing)', function(){$(this).addClass('hover')});
+	$("body").on('dragleave','.simpleFilePreview:not(.simpleFilePreview_existing)', function(){$(this).removeClass('hover')});
+	$("body").on('drop','.simpleFilePreview:not(.simpleFilePreview_existing)', function(){$(this).removeClass('hover')});
